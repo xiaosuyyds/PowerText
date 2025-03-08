@@ -29,7 +29,7 @@ full = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/xiaosuyyds/PowerBlur/"
+Homepage = "https://github.com/xiaosuyyds/PowerText/"
 
 # 关键配置：声明包的位置
 [tool.setuptools]

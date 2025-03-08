@@ -10,3 +10,4 @@
 .idea
 *.ttf
 *.otf
+.venv

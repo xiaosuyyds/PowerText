@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=65.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "PowerText"
+version = "0.0.1"
+authors = [
+  { name="校溯", email="xiaosu-1009@qq.com" }
+]
+description = "PowerText is a text renderer for Pillow that supports emojis, multiple fonts, automatic line wrapping, and automatic text truncation."
+readme = "README.md"
+requires-python = ">=3.0"
+license = { file = "LICENSE" }
+keywords = ["text renderer", "emoji", "image-processing", "pillow"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "Pillow~=11.1.0"
+]
+
+[project.optional-dependencies]
+full = [
+    "emoji~=1.6.3",
+    "pilmoji"
+]
+
+[project.urls]
+Homepage = "https://github.com/xiaosuyyds/PowerBlur/"
+
+# 关键配置：声明包的位置
+[tool.setuptools]
+package-dir = { "" = "src" }
+packages = ["power_text"]  # 如果包名与文件夹名称不同需要修改
+
+# 可选：包含静态文件（如果有需要）
+[tool.setuptools.package-data]
+PowerBlur = ["*.md"]

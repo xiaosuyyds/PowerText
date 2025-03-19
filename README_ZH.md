@@ -85,3 +85,10 @@ power_text.draw_text(
 上述代码的效果如下
 
 ![image](https://cdn.jsdelivr.net/gh/xiaosuyyds/PowerText@master/example.png)
+
+
+## 许可证
+
+版权所有 2025 Xiaosu。
+
+根据 [Apache 2.0 许可证](https://github.com/xiaosuyyds/PowerText/blob/master/LICENSE) 的条款分发。

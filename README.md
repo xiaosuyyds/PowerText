@@ -82,3 +82,9 @@ To set the `emoji_source`, provide the path to the local folder containing emoji
 The output of the above code looks like this:  
 
 ![image](https://cdn.jsdelivr.net/gh/xiaosuyyds/PowerText@master/example.png)
+
+## License
+
+Copyright 2025 Xiaosu.
+
+Distributed under the terms of the [Apache 2.0 license](https://github.com/xiaosuyyds/PowerText/blob/master/LICENSE).

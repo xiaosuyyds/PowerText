@@ -1,11 +1,12 @@
 import re
 import time
 
-import src.power_text as power_text
-# import power_text as power_text
 from PIL import Image, ImageFont, ImageDraw
-from src.power_text import local_emoji_source
-# from power_text import local_emoji_source
+
+# import src.power_text as power_text
+import power_text as power_text
+# from src.power_text import local_emoji_source
+from power_text import local_emoji_source
 
 jap = re.compile(r'[\u3040-\u309F\u30A0-\u30FF]')
 

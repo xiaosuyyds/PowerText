@@ -1,3 +1,6 @@
+# Licensed under the Apache License: http://www.apache.org/licenses/LICENSE-2.0
+# For details: https://github.com/xiaosuyyds/PowerText/blob/master/NOTICE
+
 from PIL import Image, ImageFont, ImageDraw
 from typing import Callable, List, Tuple, Optional
 

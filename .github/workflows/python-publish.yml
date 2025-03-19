@@ -22,15 +22,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Validate version match
-        run: |
-          PYPROJECT_VERSION=$(grep 'version =' pyproject.toml | cut -d '"' -f 2)
-          GIT_TAG=${GITHUB_REF#refs/tags/}
-          if [ "$PYPROJECT_VERSION" != "${GIT_TAG#v}" ]; then
-            echo "版本号不匹配: pyproject.toml=${PYPROJECT_VERSION} vs tag=${GIT_TAG}"
-            exit 1
-          fi
-
       - uses: actions/setup-python@v5
         with:
           python-version: "3.x"
@@ -39,6 +30,20 @@ jobs:
         run: |
           python -m pip install --upgrade pip setuptools wheel
           pip install -r requirements.txt
+
+      - name: Install package
+        run: pip install .
+
+      - name: Validate version match
+        run: |
+          # 使用 Python 获取 power_text.__version__
+          PYPROJECT_VERSION=$(python -c "import power_text; print(power_text.__version__)")
+          PYPROJECT_VERSION=$(echo "$PYPROJECT_VERSION" | tr -d '[:space:]')
+          GIT_TAG=${GITHUB_REF#refs/tags/}
+          if [ "$PYPROJECT_VERSION" != "${GIT_TAG#v}" ]; then
+            echo "版本号不匹配: pyproject.toml (power_text.__version__) = ${PYPROJECT_VERSION} vs tag=${GIT_TAG}"
+            exit 1
+          fi
 
       - name: Build release distributions
         run: |

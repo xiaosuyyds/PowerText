@@ -1,16 +1,26 @@
 import re
 import time
 
-import power_text
-from PIL import Image, ImageFont
+import src.power_text as power_text
+# import power_text as power_text
+from PIL import Image, ImageFont, ImageDraw
+from src.power_text import local_emoji_source
+# from power_text import local_emoji_source
 
 jap = re.compile(r'[\u3040-\u309F\u30A0-\u30FF]')
 
 img = Image.new("RGB", (1150, 630), (255, 255, 255))
+
+draw = ImageDraw.Draw(img)
+
 font1 = ImageFont.truetype(r'SmileySans-Oblique.ttf', 24)
 font2 = ImageFont.truetype(r'PINGFANG MEDIUM.TTF', 24)
 font3 = ImageFont.truetype(r'unifont-16.0.02.otf', 24)
 font4 = ImageFont.truetype(r'Segoe UI.ttf', 24)
+
+
+draw.line(((900, 0), (900, 630)), fill=(0, 0, 0))
+draw.line(((0, 220), (1150, 220)), fill=(0, 0, 0))
 
 
 start_time = time.time()
@@ -33,10 +43,10 @@ awa
         power_text.Font(font2, lambda _: True)
     ],
     (0, 0, 0),  # 字体颜色
-    max_x=886,  # 最大宽度（超过自动换行）
-    max_y=200,  # 最大高度（超过自动省略）
+    max_x=900,  # 最大宽度（超过自动换行）
+    max_y=220,  # 最大高度（超过自动省略）
     has_emoji=True,
-    # emoji_source=local_emoji_source.LocalEmojiSource(r"noto-emoji-main\png\128"),
+    emoji_source=local_emoji_source.LocalEmojiSource(r"C:\Users\xiaosu\Downloads\noto-emoji-main\png\128"),
     end_text="...",  # 省略符号
 )
 print(f"生成用时: {round(((time.time() - start_time) * 1000), 2)}ms")

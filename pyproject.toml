@@ -4,7 +4,6 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "PowerText"
-version = "0.0.2"
 authors = [
   { name="校溯", email="xiaosu-1009@qq.com" }
 ]
@@ -31,11 +30,12 @@ full = [
 [project.urls]
 Homepage = "https://github.com/xiaosuyyds/PowerText/"
 
-# 关键配置：声明包的位置
 [tool.setuptools]
 package-dir = { "" = "src" }
-packages = ["power_text"]  # 如果包名与文件夹名称不同需要修改
+packages = ["power_text"]
 
-# 可选：包含静态文件（如果有需要）
 [tool.setuptools.package-data]
 PowerBlur = ["*.md"]
+
+[tool.setuptools.dynamic]
+version = {attr = "power_text.__version__"}

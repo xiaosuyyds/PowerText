@@ -9,6 +9,7 @@ authors = [
 ]
 description = "PowerText is a text renderer for Pillow that supports emojis, multiple fonts, automatic line wrapping, and automatic text truncation."
 readme = "README.md"
+version = "0.0.3"
 requires-python = ">=3.0"
 license = { file = "LICENSE" }
 keywords = ["text renderer", "emoji", "image-processing", "pillow"]
@@ -36,6 +37,3 @@ packages = ["power_text"]
 
 [tool.setuptools.package-data]
 PowerBlur = ["*.md"]
-
-[tool.setuptools.dynamic]
-version = {attr = "power_text.__version__"}

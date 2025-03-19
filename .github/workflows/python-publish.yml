@@ -28,28 +28,22 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip setuptools wheel
-          pip install -r requirements.txt
-
-      - name: Install package
-        run: pip install .
+          python -m pip install --upgrade pip
+          pip install build twine setuptools wheel
+          python -m pip install -r requirements.txt
 
       - name: Validate version match
         run: |
-          # 使用 Python 获取 power_text.__version__
-          PYPROJECT_VERSION=$(python -c "import power_text; print(power_text.__version__)")
-          PYPROJECT_VERSION=$(echo "$PYPROJECT_VERSION" | tr -d '[:space:]')
+          PYPROJECT_VERSION=$(grep 'version =' pyproject.toml | cut -d '"' -f 2)
           GIT_TAG=${GITHUB_REF#refs/tags/}
           if [ "$PYPROJECT_VERSION" != "${GIT_TAG#v}" ]; then
-            echo "版本号不匹配: pyproject.toml (power_text.__version__) = ${PYPROJECT_VERSION} vs tag=${GIT_TAG}"
+            echo "版本号不匹配: pyproject.toml=${PYPROJECT_VERSION} vs tag=${GIT_TAG}"
             exit 1
           fi
 
       - name: Build release distributions
         run: |
-          # NOTE: put your own distribution build steps here.
-          python -m pip install build
-          python -m build --sdist --wheel --outdir dist/
+          python -m build --outdir dist/
 
       - name: Upload distributions
         uses: actions/upload-artifact@v4

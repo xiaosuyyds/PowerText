@@ -62,52 +62,73 @@ class Font:
         """
         if has_emoji and pilmoji and Pilmoji:  # 检查 pilmoji 是否可用
             font = None if self.is_emoji else self.font
-            return pilmoji.getsize(text, font)
+            return pilmoji.getsize(text, font=font)
         else:
             text_l, text_t, text_r, text_b = self.font.getbbox(text)
             return int(text_r - text_l), int(text_b - text_t)
 
 
-def _parse_text_segments(text: str, fonts: List[Font], has_emoji: bool) -> List[Tuple[str, Font, bool]]:
+def _parse_text_segments(text: str, fonts: List[Font], has_emoji: bool, max_x: int = -1) \
+        -> Tuple[List[Tuple[str, Font, bool]], List[Font]]:
     """
     解析文本，将其拆分为不同的字体片段。
     :param text: 输入文本
     :param fonts: 字体列表
     :param has_emoji: 是否处理 emoji
+    :param max_x: 最大宽度，超出换行，-1 表示不限制
     :return: 文本片段列表，每个片段包含 (文本, 字体对象, 是否是 emoji)
     """
+    fonts = fonts[:]
+
     text_segments: List[Tuple[str, Font, bool]] = []
     if has_emoji:
         if not emoji:
             raise ImportError("If the rendering has text with emoji, install emoji: pip install emoji")
         fonts.insert(0, Font("emoji", emoji.is_emoji))  # 处理 emoji
+    used_fonts = set()
+    if max_x != -1:
+        char_x = max(*[-1] + [int(f.font.size * 1.5) for f in fonts])
+        max_char = max_x // char_x
+    else:
+        char_x = 0
+        max_char = 0
 
     for char in text:
-        for font in fonts:
+        for i in range(len(fonts)):
+            font = fonts[i]
             if font.matcher(char):
                 if not font.is_emoji:
                     # 处理连续相同字体的文本
                     if (text_segments and (text_segments[-1][1] == font or text_segments[-1][1].is_emoji) and
                             char != '\n' and text_segments[-1][0] != '\n'):
-                        text_segments[-1] = (text_segments[-1][0] + char, font, text_segments[-1][2])
+                        if max_x != -1 and len(text_segments[-1][0] + char) > max_char:
+                            # 超大长度文本处理换行缓慢，提前拆分成多节
+                            text_segments.append((char, font, False))
+                        else:
+                            text_segments[-1] = (text_segments[-1][0] + char, font, text_segments[-1][2])
                     else:
                         text_segments.append((char, font, False))
                 else:
                     # 处理 emoji
                     if text_segments and text_segments[-1][0] != '\n':
-                        text_segments[-1] = (text_segments[-1][0] + char, text_segments[-1][1], True)
+                        if max_x != -1 and max_x < char_x * len(char):
+                            # 超大长度文本处理换行缓慢，提前拆分成多节
+                            text_segments.append((char, font, True))
+                        else:
+                            text_segments[-1] = (text_segments[-1][0] + char, text_segments[-1][1], True)
                     else:
                         text_segments.append((char, font, True))
+                used_fonts.add(i)
                 break
         else:
             raise ValueError(f'未找到匹配的字体: {char}')
-    return text_segments
+    return text_segments, [fonts[i] for i in used_fonts]
 
 
-def draw_text(img: Image.Image, xy: tuple[int, int], text: str, fonts: List[Font],
-              color: tuple[int, int, int], max_x: int = -1, max_y: int = -1, max_line: int = -1,
+def draw_text(img: Image.Image, xy: tuple[int, int], text: str, fonts: List[Font], color: tuple[int, int, int],
+              max_x: int = -1, max_y: int = -1, max_line: int = -1,
               end_text: str = "", end_text_font: Optional[Font] = None,
-              line_height: int = -1,
+              line_height: int = -1, fast_get_line_height: bool = True, guess_line_breaks: bool = True,
               has_emoji: bool = True, emoji_source=None):
     """
     在图像上绘制文本，并支持 多字体与emoji。
@@ -122,19 +143,32 @@ def draw_text(img: Image.Image, xy: tuple[int, int], text: str, fonts: List[Font
     :param end_text: 超出最大行数时，结尾添加绘制文本，默认为 ""，不支持emoji
     :param end_text_font: 超出最大行数时，结尾添加绘制文本的字体，默认为 None，表示使用fonts内最后一个字体
     :param line_height: 行高，-1 表示自动计算
+    :param fast_get_line_height: 是否使用快速计算行高，默认为 True，如果包含特殊字符，则可关闭以优化效果
+    :param guess_line_breaks: 是否使用猜测换行字符长度优化换行速度，默认为 True，如果单行文本数量较少可以关闭（如果文本数量较少可能会导致负优化）
     :param has_emoji: 是否处理 emoji
     :param emoji_source: emoji 来源
     """
-    text_segments = _parse_text_segments(text, fonts, has_emoji)
+    if has_emoji:
+        if not Pilmoji:
+            raise ImportError("If the rendering has text with emoji, install pilmoji: pip install pilmoji")
+
+        pilmoji_instance = Pilmoji(img, source=emoji_source)
+    else:
+        pilmoji_instance = None
+
+    text_segments, fonts = _parse_text_segments(text, fonts, has_emoji, max_x)
 
     # 自动计算行高
     if line_height == -1:
-        for text, text_font, _ in text_segments:
-            _, text_h = text_font.get_size(text, has_emoji)
-            if not text_font.is_emoji:
-                line_height = max(text_h + text_font.font.getmetrics()[1], line_height)
-            else:
-                line_height = max(text_h, line_height)
+        if fast_get_line_height:
+            line_height = max(*[-1] + [int((f.font.size + f.font.getmetrics()[1])) for f in fonts])
+        else:
+            for text, text_font, _ in text_segments:
+                _, text_h = text_font.get_size(text, has_emoji)
+                if not text_font.is_emoji:
+                    line_height = max(text_h + text_font.font.getmetrics()[1], line_height)
+                else:
+                    line_height = max(text_h, line_height)
         if line_height == 0:
             line_height = 10  # 异常情况下的默认行高
 
@@ -148,42 +182,55 @@ def draw_text(img: Image.Image, xy: tuple[int, int], text: str, fonts: List[Font
             end_text_w *= 1.5
 
     draw = ImageDraw.Draw(img)
-    if has_emoji:
-        if not Pilmoji:
-            raise ImportError("If the rendering has text with emoji, install pilmoji: pip install pilmoji")
-
-        pilmoji_instance = Pilmoji(img, source=emoji_source)
-    else:
-        pilmoji_instance = None
 
     now_x, now_y = xy
     last_x, last_y = xy
     last_text_w = 0
     line_index = 1
     i = 0
+    guess_cache = {}
     while i < len(text_segments):
         text, text_font, is_emoji_segment = text_segments[i]
         is_enter = False
 
+        target_max_x = (max_x - now_x if (max_line == -1 or max_line != line_index) and
+                                         (max_y == -1 or now_y + line_height * 2 < max_y)
+                        else max_x - now_x - end_text_w)
         # 处理换行逻辑
-        if max_x != -1 and text_font.get_size(text)[0] > max_x - now_x or text == '\n':
+        if (
+                max_x != -1 and
+                text_font.get_size(text, has_emoji and is_emoji_segment)[0] > target_max_x or
+                text == '\n'
+        ):
             # 二分查找找出最大能写下的部分
             if text != '\n':
                 left, right = 0, len(text) - 1
                 best_index = 0
+
+                if guess_line_breaks:
+                    if text_font not in guess_cache:
+                        guess_cache[text_font] = text_font.get_size("啊", has_emoji and is_emoji_segment)[0]
+
+                    initial_guess = int(target_max_x // guess_cache[text_font])
+                    if 0 <= initial_guess < len(text):
+                        prefix_guess = text[:initial_guess]
+                        sum_guess = text_font.get_size(prefix_guess, has_emoji and is_emoji_segment)[0]
+                        if sum_guess < target_max_x:
+                            left = initial_guess  # 猜测值可行，将下界设置为猜测值
+                            right = min(initial_guess * 2, len(text))
+                            best_index = initial_guess  # 初始最大长度可以先设置为猜测值
+                        else:
+                            right = initial_guess - 1  # 猜测值过大，将上界设置为猜测值-1
+
                 while left < right:
-                    m = (left + right + 1) // 2
+                    mid = (left + right + 1) // 2
                     if (
-                            text_font.get_size(text[:m], has_emoji and is_emoji_segment)[0] <
-                            (max_x - now_x
-                             if (max_line == -1 or max_line != line_index) and
-                                (max_y == -1 or now_y + line_height * 2 < max_y)
-                             else max_x - now_x - end_text_w)
+                            text_font.get_size(text[:mid], has_emoji and is_emoji_segment)[0] < target_max_x
                     ):
-                        left = m
-                        best_index = m
+                        left = mid
+                        best_index = mid
                     else:
-                        right = m - 1
+                        right = mid - 1
 
                 current_text = text[:best_index]
                 remaining_text = text[best_index:]

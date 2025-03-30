@@ -55,9 +55,9 @@ power_text.draw_text(
 awa
     """.strip(),
     [
-        power_text.Font(font4, lambda char: char.lower() in "abcdefghijklmnopqrstuvwxyz0123456789"),
-        power_text.Font(font3, lambda char: jap.match(char) is not None),
-        power_text.Font(font2, lambda _: True)
+        power_text.Font(font4, lambda char: char.lower() in "abcdefghijklmnopqrstuvwxyz0123456789", (0, 0, 0)),
+        power_text.Font(font3, lambda char: jap.match(char) is not None, (22, 125, 255)),
+        power_text.Font(font2, lambda _: True, (220, 20, 60))
     ],
     (0, 0, 0),  # Font color
     max_x=886,  # Maximum width (auto line wrap if exceeded)

@@ -215,6 +215,7 @@ def draw_text(img: Image.Image, xy: tuple[int, int], text: str, fonts: List[Font
 
     while i < len(text_segments):
         text, text_font, is_emoji_segment = text_segments[i]
+        text = str(text)
         is_enter = False
 
         target_max_x = (max_x - now_x if (max_line == -1 or max_line != line_index) and

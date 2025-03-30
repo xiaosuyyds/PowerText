@@ -20,7 +20,8 @@ except AttributeError as e:
 
 
 class Font:
-    def __init__(self, font: ImageFont.FreeTypeFont, matcher: Callable[[str], bool], color: tuple[int, int, int] | None = None,
+    def __init__(self, font: ImageFont.FreeTypeFont, matcher: Callable[[str], bool],
+                 color: tuple[int, int, int] | None = None,
                  is_emoji: bool = False):
         """
         初始化字体对象。
@@ -145,7 +146,7 @@ def draw_text(img: Image.Image, xy: tuple[int, int], text: str, fonts: List[Font
               end_text: str = "", end_text_font: Optional[Font] = None,
               line_height: int = -1, fast_get_line_height: bool = True, guess_line_breaks: bool = True,
               auto_font_y_offset: bool = True,
-              has_emoji: bool = True, emoji_source=None):
+              has_emoji: bool = True, emoji_source=None) -> tuple[int, int]:
     """
     在图像上绘制文本，并支持 多字体与emoji。
     :param img: PIL 图像对象
@@ -164,6 +165,7 @@ def draw_text(img: Image.Image, xy: tuple[int, int], text: str, fonts: List[Font
     :param auto_font_y_offset: 是否自动计算字体 Y 轴偏移，默认为 True，如果字体大小一样或不在乎细节可以关闭以优化性能（不过性能损失也不大）
     :param has_emoji: 是否处理 emoji
     :param emoji_source: emoji 来源
+    :return: 最后的x坐标与最后的y坐标
     """
     if has_emoji:
         if not Pilmoji:
@@ -224,8 +226,10 @@ def draw_text(img: Image.Image, xy: tuple[int, int], text: str, fonts: List[Font
         # 处理换行逻辑
         if (
                 max_x != -1 and
-                text_font.get_size(text, has_emoji and is_emoji_segment)[0] > target_max_x or
-                text == '\n'
+                (
+                        text_font.get_size(text, has_emoji and is_emoji_segment)[0] > target_max_x or
+                        text == '\n'
+                )
         ):
             # 二分查找找出最大能写下的部分
             if text != '\n':
@@ -261,7 +265,7 @@ def draw_text(img: Image.Image, xy: tuple[int, int], text: str, fonts: List[Font
                 remaining_text = text[best_index:]
                 # 将剩余文本添加回text_segments
                 text_segments[i] = (remaining_text, text_font, True
-                if has_emoji and emoji.is_emoji(remaining_text) is not None else False)
+                                    if has_emoji and emoji.is_emoji(remaining_text) is not None else False)
                 text = current_text  # 使用截断后的文本
 
             is_enter = True
@@ -310,3 +314,5 @@ def draw_text(img: Image.Image, xy: tuple[int, int], text: str, fonts: List[Font
 
     if pilmoji_instance:
         pilmoji_instance.close()  # 统一关闭 pilmoji 实例
+
+    return last_x, last_y

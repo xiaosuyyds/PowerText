@@ -315,4 +315,4 @@ def draw_text(img: Image.Image, xy: tuple[int, int], text: str, fonts: List[Font
     if pilmoji_instance:
         pilmoji_instance.close()  # 统一关闭 pilmoji 实例
 
-    return last_x, last_y
+    return now_x, now_y

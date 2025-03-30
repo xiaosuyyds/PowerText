@@ -3,10 +3,10 @@ import time
 
 from PIL import Image, ImageFont, ImageDraw
 
-# import src.power_text as power_text
-import power_text as power_text
-# from src.power_text import local_emoji_source
-from power_text import local_emoji_source
+import src.power_text as power_text
+# import power_text as power_text
+from src.power_text import local_emoji_source
+# from power_text import local_emoji_source
 
 jap = re.compile(r'[\u3040-\u309F\u30A0-\u30FF]')
 
@@ -39,9 +39,9 @@ power_text.draw_text(
 awa
     """.strip(),
     [
-        power_text.Font(font4, lambda char: char.lower() in "abcdefghijklmnopqrstuvwxyz0123456789"),
-        power_text.Font(font3, lambda char: jap.match(char) is not None),
-        power_text.Font(font2, lambda _: True)
+        power_text.Font(font4, lambda char: char.lower() in "abcdefghijklmnopqrstuvwxyz0123456789", (0, 0, 0)),
+        power_text.Font(font3, lambda char: jap.match(char) is not None, (22, 125, 255)),
+        power_text.Font(font2, lambda _: True, (220, 20, 60))
     ],
     (0, 0, 0),  # 字体颜色
     max_x=900,  # 最大宽度（超过自动换行）

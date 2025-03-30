@@ -20,16 +20,19 @@ except AttributeError as e:
 
 
 class Font:
-    def __init__(self, font: ImageFont.FreeTypeFont, matcher: Callable[[str], bool], is_emoji: bool = False):
+    def __init__(self, font: ImageFont.FreeTypeFont, matcher: Callable[[str], bool], color: tuple[int, int, int] | None = None,
+                 is_emoji: bool = False):
         """
         初始化字体对象。
         :param font: 传入的字体对象或字符串
         :param matcher: 用于匹配文本字符的回调函数
+        :param color: 字体颜色，默认使用draw_text的颜色
         :param is_emoji: 是否是 emoji
         """
         self._font: ImageFont.FreeTypeFont = font
         self.matcher_func: Callable[[str], bool] = matcher
         self._is_emoji: bool = is_emoji
+        self.color: tuple[int, int, int] | None = color
 
     def matcher(self, text: str) -> bool:
         """
@@ -91,7 +94,7 @@ def _parse_text_segments(text: str, fonts: List[Font], has_emoji: bool, max_x: i
     if has_emoji:
         if not emoji:
             raise ImportError("If the rendering has text with emoji, install emoji: pip install emoji")
-        fonts.insert(0, Font(ImageFont.load_default(line_height), emoji.is_emoji, True))  # 处理 emoji
+        fonts.insert(0, Font(ImageFont.load_default(line_height), emoji.is_emoji, is_emoji=True))  # 处理 emoji
         fonts_y_line_height[fonts[0]] = line_height
     used_fonts = set()
     if max_x != -1:
@@ -277,10 +280,16 @@ def draw_text(img: Image.Image, xy: tuple[int, int], text: str, fonts: List[Font
             y_offset = 0
 
         if is_emoji_segment and pilmoji_instance:
-            pilmoji_instance.text((now_x, now_y + y_offset), text, color,
-                                  font=text_font.font)
+            if text_font.color:
+                pilmoji_instance.text((now_x, now_y + y_offset), text, text_font.color,
+                                      font=text_font.font)
+            else:
+                pilmoji_instance.text((now_x, now_y + y_offset), text, color, font=text_font.font)
         else:
-            draw.text((now_x, now_y + y_offset), text, color, font=text_font.font)
+            if text_font.color:
+                draw.text((now_x, now_y + y_offset), text, text_font.color, font=text_font.font)
+            else:
+                draw.text((now_x, now_y + y_offset), text, color, font=text_font.font)
 
         last_x, last_y = now_x, now_y
         last_text_w = text_font.get_size(text, has_emoji)[0]

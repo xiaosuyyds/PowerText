@@ -112,6 +112,7 @@ def _parse_text_segments(text: str | list[dict], fonts: List[Font], has_emoji: b
         for i in text:
             for j in i['text']:
                 text_.append({'text': j, **{k: i[k] for k in i if k != 'text'}})
+        text = text_
 
     fonts = fonts[:]
 
@@ -139,13 +140,15 @@ def _parse_text_segments(text: str | list[dict], fonts: List[Font], has_emoji: b
         char_x = 0
         max_char = 0
 
-    for char in text:
+    for char_ in text:
         first_match_font = None
         for i in range(len(fonts)):
             font = fonts[i]
-            if font.matcher(char):
-                if isinstance(char, dict):
-                    char = char['text']
+            if font.matcher(char_):
+                if isinstance(char_, dict):
+                    char = char_['text']
+                else:
+                    char = char_
                 if not first_match_font:
                     first_match_font = font, i
                 if font_fallback and not font.check_has_text(char):
@@ -182,8 +185,10 @@ def _parse_text_segments(text: str | list[dict], fonts: List[Font], has_emoji: b
                 # 有匹配的字体但是都没有该字符
                 font, i = first_match_font
 
-                if isinstance(char, dict):
-                    char = char['text']
+                if isinstance(char_, dict):
+                    char = char_['text']
+                else:
+                    char = char_
 
                 if not font.is_emoji:
                     # 处理连续相同字体的文本

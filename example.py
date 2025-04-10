@@ -14,10 +14,9 @@ img = Image.new("RGB", (1150, 630), (255, 255, 255))
 
 draw = ImageDraw.Draw(img)
 
-font1 = ImageFont.truetype(r'SmileySans-Oblique.ttf', 24)
-font2 = ImageFont.truetype(r'PINGFANG MEDIUM.TTF', 24)
-font3 = ImageFont.truetype(r'unifont-16.0.02.otf', 24)
-font4 = ImageFont.truetype(r'Segoe UI.ttf', 24)
+font1 = ImageFont.truetype(r'PINGFANG MEDIUM.TTF', 24)
+font2 = ImageFont.truetype(r'unifont-16.0.02.otf', 24)
+font3 = ImageFont.truetype(r'Segoe UI.ttf', 24)
 
 
 draw.line(((900, 0), (900, 630)), fill=(0, 0, 0))
@@ -39,9 +38,9 @@ power_text.draw_text(
 awa
     """.strip(),
     [
-        power_text.Font(font4, lambda char: char.lower() in "abcdefghijklmnopqrstuvwxyz0123456789", (0, 0, 0)),
-        power_text.Font(font3, lambda char: jap.match(char) is not None, (22, 125, 255)),
-        power_text.Font(font2, lambda _: True, (220, 20, 60))
+        power_text.Font(font3, lambda char: char.lower() in "abcdefghijklmnopqrstuvwxyz0123456789"),
+        power_text.Font(font2, lambda char: jap.match(char) is not None, (22, 125, 255)),
+        power_text.Font(font1, lambda _: True, (220, 20, 60))
     ],
     (0, 0, 0),  # 字体颜色
     max_x=900,  # 最大宽度（超过自动换行）

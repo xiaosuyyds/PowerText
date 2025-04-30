@@ -2,7 +2,7 @@
 # For details: https://github.com/xiaosuyyds/PowerText/blob/master/NOTICE
 
 from PIL import Image, ImageFont, ImageDraw
-from typing import Callable, List, Tuple, Optional
+from typing import Callable, List, Tuple, Optional, NamedTuple
 from fontTools.ttLib import TTFont
 
 try:
@@ -95,7 +95,7 @@ class Font:
 
 
 def _parse_text_segments(text: str | list[dict], fonts: List[Font], has_emoji: bool, max_x: int = -1,
-                         font_fallback: bool = True)\
+                         font_fallback: bool = True) \
         -> Tuple[List[Tuple[str, Font, bool]], List[Font], dict[Font, int]]:
     """
     解析文本，将其拆分为不同的字体片段。
@@ -128,7 +128,8 @@ def _parse_text_segments(text: str | list[dict], fonts: List[Font], has_emoji: b
             raise ImportError("If the rendering has text with emoji, install emoji: pip install emoji")
         # 处理 emoji
         if isinstance(text, list):
-            fonts.insert(0, Font(ImageFont.load_default(line_height), lambda x: emoji.is_emoji(x['text']), is_emoji=True))
+            fonts.insert(0,
+                         Font(ImageFont.load_default(line_height), lambda x: emoji.is_emoji(x['text']), is_emoji=True))
         else:
             fonts.insert(0, Font(ImageFont.load_default(line_height), emoji.is_emoji, is_emoji=True))
         fonts_y_line_height[fonts[0]] = line_height
@@ -222,13 +223,23 @@ def _parse_text_segments(text: str | list[dict], fonts: List[Font], has_emoji: b
     return text_segments, [fonts[i] for i in used_fonts], fonts_y_line_height
 
 
-def draw_text(img: Image.Image, xy: tuple[int, int], text: str | list[dict], fonts: List[Font], color: tuple[int, int, int],
+class DrawResult(NamedTuple):
+    final_pos: tuple[int, int]  # 绘制结束后光标的位置
+    bbox: tuple[int, int, int, int]  # 文本绘制的实际边界框 (x, y, width, height)
+    lines: int  # 绘制的总行数
+    truncated: bool  # 文本是否因限制被截断
+    line_height_used: int  # 实际使用的行高
+    last_segment: tuple[str, Font, bool]  # 最后一个绘制的文本内容
+
+
+def draw_text(img: Image.Image, xy: tuple[int, int], text: str | list[dict], fonts: List[Font],
+              color: tuple[int, int, int],
               max_x: int = -1, max_y: int = -1, max_line: int = -1,
               end_text: str = "", end_text_font: Optional[Font] = None,
               line_height: int = -1, fast_get_line_height: bool = True, guess_line_breaks: bool = True,
               auto_font_y_offset: bool = True,
               has_emoji: bool = True, emoji_source=None,
-              font_fallback: bool = True) -> tuple[int, int]:
+              font_fallback: bool = True) -> DrawResult:
     """
     在图像上绘制文本，并支持 多字体与emoji。
     :param img: PIL 图像对象
@@ -248,7 +259,7 @@ def draw_text(img: Image.Image, xy: tuple[int, int], text: str | list[dict], fon
     :param has_emoji: 是否处理 emoji
     :param emoji_source: emoji 来源
     :param font_fallback: 是否使用字体回退，默认为 True，如果启用则如果匹配的字体没有所需字符则使用下一个匹配的字符，如果都没有则使用第一个匹配的字符进行绘制
-    :return: 最后的x坐标与最后的y坐标
+    :return: DrawResult
     """
     if has_emoji:
         if not Pilmoji:
@@ -291,12 +302,19 @@ def draw_text(img: Image.Image, xy: tuple[int, int], text: str | list[dict], fon
 
     draw = ImageDraw.Draw(img)
 
-    now_x, now_y = xy
-    last_x, last_y = xy
-    last_text_w = 0
-    line_index = 1
-    i = 0
     guess_cache = {}
+    last_segment = None  # 最后一个绘制的文本内容
+    lines_drawn = 1  # 绘制的行数
+    lines_drawn_flag = False  # 是否要在下一次循环时增加lines_drawn的标志
+    start_x, start_y = xy  # 绘制起始位置
+    now_x, now_y = start_x, start_y  # 当前的绘制位置
+    last_x, last_y = start_x, start_y  # last_y 记录绘制时的基线 Y
+    last_text_w = 0  # 最后一个绘制的文本宽度
+    line_index = 1  # 当前行数
+    i = 0  # 遍历索引
+    max_reached_x = start_x  # 跟踪最大 X 坐标
+    truncated = False  # 是否因限制被截断
+    something_drawn = False  # 是否实际绘制过内容
 
     while i < len(text_segments):
         text, text_font, is_emoji_segment = text_segments[i]
@@ -347,26 +365,34 @@ def draw_text(img: Image.Image, xy: tuple[int, int], text: str | list[dict], fon
                 current_text = text[:best_index]
                 remaining_text = text[best_index:]
                 # 将剩余文本添加回text_segments
-                text_segments[i] = (remaining_text, text_font, True
-                                    if has_emoji and emoji.is_emoji(remaining_text) is not None else False)
+                text_segments[i] = (
+                    remaining_text, text_font,
+                    has_emoji and emoji.is_emoji(remaining_text)
+                )
                 text = current_text  # 使用截断后的文本
 
             is_enter = True
 
+        # 判断是否超出最大高度或者最大行数
         if (max_y != -1 and now_y + line_height > max_y) or (max_line != -1 and line_index > max_line):
+            # 绘制尾部文本（如果有）
             if len(end_text):
                 if isinstance(end_text_font, Font):
                     end_text_font = end_text_font.font
                 if end_text_font is None:
                     end_text_font = fonts[-1].font
                 draw.text((last_x + last_text_w, last_y), end_text, color, font=end_text_font)
+                max_reached_x = max(max_reached_x, last_x + end_text_draw_font.getlength(end_text))
+            truncated = True
             break
 
+        # 计算y坐标偏移
         if auto_font_y_offset:
             y_offset = (line_height - fonts_y_line_height[text_font]) // 2
         else:
             y_offset = 0
 
+        # 绘制文本
         if is_emoji_segment and pilmoji_instance:
             if text_font.color:
                 pilmoji_instance.text((now_x, now_y + y_offset), text, text_font.color,
@@ -379,23 +405,53 @@ def draw_text(img: Image.Image, xy: tuple[int, int], text: str | list[dict], fon
             else:
                 draw.text((now_x, now_y + y_offset), text, color, font=text_font.font)
 
+        # 更新变量
         last_x, last_y = now_x, now_y
-        last_text_w = text_font.get_size(text, has_emoji)[0]
-        now_x += last_text_w
 
-        if is_enter and text != '\n':  # 换行条件判断合并
-            now_x = xy[0]
-            now_y += line_height
-            line_index += 1
-        elif text == '\n':
+        something_drawn = True
+        current_segment_info = (text, text_font, is_emoji_segment)  # 当前绘制的信息
+        last_segment = current_segment_info  # 更新最后绘制的 segment
+        segment_width = text_font.get_size(text, has_emoji)[0]
+        last_text_w = segment_width  # 记录本段宽度
+        now_x += segment_width
+        max_reached_x = max(max_reached_x, now_x)  # 更新最大 X
+
+        # 更新实际绘制行数
+        if lines_drawn_flag:
+            lines_drawn += 1
+            lines_drawn_flag = False
+
+        # 更新行数、索引、绘制位置
+        if text == '\n':
             now_x = xy[0]
             now_y += line_height
             i += 1
             line_index += 1
+            lines_drawn_flag = True
+        elif is_enter:
+            now_x = xy[0]
+            now_y += line_height
+            line_index += 1
+            lines_drawn_flag = True
         else:
             i += 1
 
     if pilmoji_instance:
         pilmoji_instance.close()  # 统一关闭 pilmoji 实例
 
-    return now_x, now_y
+    if not something_drawn:
+        final_bbox = (start_x, start_y, 0, 0)
+    else:
+        bbox_width = max_reached_x - start_x
+        # 高度 = 最后绘制行的基线 + 行高 - 起始 Y
+        bbox_height = (last_y + line_height) - start_y
+        final_bbox = (start_x, start_y, bbox_width, bbox_height)
+
+    return DrawResult(
+        final_pos=(now_x, now_y),
+        bbox=final_bbox,
+        lines=lines_drawn,
+        truncated=truncated,
+        line_height_used=line_height,
+        last_segment=last_segment
+    )

@@ -24,7 +24,7 @@ draw.line(((0, 220), (1150, 220)), fill=(0, 0, 0))
 
 
 start_time = time.time()
-power_text.draw_text(
+res = power_text.draw_text(
     img,
     (10, 10),  # 起始xy坐标
 
@@ -50,4 +50,9 @@ awa
     end_text="...",  # 省略符号
 )
 print(f"生成用时: {round(((time.time() - start_time) * 1000), 2)}ms")
+draw.rectangle(
+    (res.bbox[0], res.bbox[1], res.bbox[0] + res.bbox[2], res.bbox[1] + res.bbox[3]),
+    outline=(255, 0, 0), width=2
+)
+print(res)
 img.save("example.png")

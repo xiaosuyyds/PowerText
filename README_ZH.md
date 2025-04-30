@@ -85,7 +85,7 @@ power_text.draw_text(
 ```
 设置 `emoji_source` 的方法是提供本地存放 emoji 图片（如 PNG 文件）的文件夹路径。你可以从谷歌的 [Noto Emoji 项目](https://github.com/googlefonts/noto-emoji/tree/main/png) 获取 emoji 图片。将任意一个分辨率（例如 `128`）的 `png` 文件夹下载到本地，并将 `LocalEmojiSource` 指向该目录即可。
 
-上述代码的效果如下
+上述代码的效果如下([绘制代码](example.py))
 
 ![image](https://cdn.jsdelivr.net/gh/xiaosuyyds/PowerText@master/example.png)
 

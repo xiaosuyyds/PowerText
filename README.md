@@ -82,7 +82,7 @@ power_text.draw_text(
 ```
 To set the `emoji_source`, provide the path to the local folder containing emoji images (e.g., PNGs). You can obtain emoji images from Google's [Noto Emoji project](https://github.com/googlefonts/noto-emoji/tree/main/png). Download the `png` folder for a specific resolution (like `128`) to your local machine and point `LocalEmojiSource` to that directory.
 
-The output of the above code looks like this:  
+The output of the above code looks like this([Draw code](example.py)):  
 
 ![image](https://cdn.jsdelivr.net/gh/xiaosuyyds/PowerText@master/example.png)
 

@@ -239,7 +239,8 @@ def draw_text(img: Image.Image, xy: tuple[int, int], text: str | list[dict], fon
               line_height: int = -1, fast_get_line_height: bool = True, guess_line_breaks: bool = True,
               auto_font_y_offset: bool = True,
               has_emoji: bool = True, emoji_source=None,
-              font_fallback: bool = True) -> DrawResult:
+              font_fallback: bool = True,
+              wrap_indent: int | str = 0) -> DrawResult:
     """
     在图像上绘制文本，并支持 多字体与emoji。
     :param img: PIL 图像对象
@@ -259,6 +260,7 @@ def draw_text(img: Image.Image, xy: tuple[int, int], text: str | list[dict], fon
     :param has_emoji: 是否处理 emoji
     :param emoji_source: emoji 来源
     :param font_fallback: 是否使用字体回退，默认为 True，如果启用则如果匹配的字体没有所需字符则使用下一个匹配的字符，如果都没有则使用第一个匹配的字符进行绘制
+    :param wrap_indent: 换行缩进，可为字符串也可为数字，字符串代表换行时开头的字符，数字代表换行时便宜的宽度
     :return: DrawResult
     """
     if has_emoji:
@@ -364,11 +366,17 @@ def draw_text(img: Image.Image, xy: tuple[int, int], text: str | list[dict], fon
 
                 current_text = text[:best_index]
                 remaining_text = text[best_index:]
+
                 # 将剩余文本添加回text_segments
                 text_segments[i] = (
                     remaining_text, text_font,
                     has_emoji and emoji.is_emoji(remaining_text)
                 )
+
+                # 如果设置了wrap_indent，则将wrap_indent添加到text_segments中
+                if isinstance(wrap_indent, str):
+                    text_segments.insert(i, (wrap_indent, text_font, False))
+
                 text = current_text  # 使用截断后的文本
 
             is_enter = True
@@ -433,6 +441,8 @@ def draw_text(img: Image.Image, xy: tuple[int, int], text: str | list[dict], fon
             now_y += line_height
             line_index += 1
             lines_drawn_flag = True
+            if isinstance(wrap_indent, int):
+                now_x += wrap_indent
         else:
             i += 1
 

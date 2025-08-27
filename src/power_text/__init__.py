@@ -3,9 +3,10 @@
 
 __version__ = "0.5.0"
 
-from .power_text import Font, draw_text
+from .power_text import Font, draw_text, FontMatcherResult
 
 __all__ = [
     "Font",
-    "draw_text"
+    "draw_text",
+    "FontMatcherResult"
 ]

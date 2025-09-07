@@ -3,9 +3,10 @@
 
 import dataclasses
 import weakref
+from functools import lru_cache
+from typing import Callable, List, Tuple, Optional, NamedTuple
 
 from PIL import Image, ImageFont, ImageDraw
-from typing import Callable, List, Tuple, Optional, NamedTuple
 from fontTools.ttLib import TTFont
 
 try:
@@ -22,7 +23,7 @@ except AttributeError as e:
                              "see https://github.com/carpedm20/emoji/issues/221#issuecomment-1199857533")
     raise e
 
-font_cache = weakref.WeakValueDictionary()
+font_uni_map_cache = weakref.WeakValueDictionary()
 
 
 @dataclasses.dataclass
@@ -38,11 +39,47 @@ class TextSegment:
     color: tuple[int, int, int] | None = None
 
 
-def check_has_char(char: str, font_uni_map):
-    if ord(char) in font_uni_map.keys():
+@lru_cache(maxsize=1024)
+def check_has_char(char: str, font_path):
+    font_uni_map = font_uni_map_cache.get(font_path)
+
+    if font_uni_map is None:
+        font_uni_map = FontUniMapWrapper(None)
+        font_uni_map_cache[font_path] = font_uni_map
+
+    if font_uni_map.data is None:
+        try:
+            font_uni_map.data = set(
+                TTFont(font_path, lazy=True)['cmap'].tables[0].ttFont.getBestCmap().keys()
+            )
+        except:
+            font_uni_map.data = set()
+
+    if ord(char) in font_uni_map.data:
         return True
     else:
         return False
+
+
+@lru_cache(maxsize=1024)
+def get_size(text: str, font: ImageFont.FreeTypeFont, has_emoji: bool = True):
+    """
+    获取文本尺寸。
+    :param text: 输入文本
+    :param font: 字体对象
+    :param has_emoji: 是否包含 emoji
+    :return: 文本宽度和高度
+    """
+    if has_emoji and pilmoji and Pilmoji:  # 检查 pilmoji 是否可用
+        return pilmoji.getsize(text, font=font)
+    else:
+        text_l, text_t, text_r, text_b = font.getbbox(text)
+        return int(text_r - text_l), int(text_b - text_t)
+
+
+class FontUniMapWrapper:
+    def __init__(self, data):
+        self.data = data
 
 
 class Font:
@@ -64,15 +101,15 @@ class Font:
         self.color: tuple[int, int, int] | None = color
 
         self.check_has_char_func = check_has_char_func
-        if self.check_has_char_func == check_has_char:
-            font_ = font_cache.get(font.path, TTFont(font.path, lazy=True))
-            font_cache[font.path] = font_
-            self.fonttools_font = font_
-            self.font_uni_map = self.fonttools_font['cmap'].tables[0].ttFont.getBestCmap()
+        if self.check_has_char_func == check_has_char and font.path and not is_emoji:
+            self.font_uni_map = font_uni_map_cache.get(
+                font.path, FontUniMapWrapper(None)
+            )
+            font_uni_map_cache[font.path] = self.font_uni_map
 
     def check_has_text(self, text: str):
         if self.check_has_char_func == check_has_char:
-            return all(check_has_char(char, self.font_uni_map) for char in text)
+            return all(check_has_char(char, self.font.path) for char in text)
         else:
             return all(self.check_has_char_func(char, self.font) for char in text)
 
@@ -107,11 +144,7 @@ class Font:
         :param has_emoji: 是否包含 emoji
         :return: 文本宽度和高度
         """
-        if has_emoji and pilmoji and Pilmoji:  # 检查 pilmoji 是否可用
-            return pilmoji.getsize(text, font=self.font)
-        else:
-            text_l, text_t, text_r, text_b = self.font.getbbox(text)
-            return int(text_r - text_l), int(text_b - text_t)
+        return get_size(text, self.font, has_emoji)
 
 
 def _parse_text_segments(text: str | list[dict], fonts: List[Font], has_emoji: bool, max_x: int = -1,

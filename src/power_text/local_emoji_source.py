@@ -2,6 +2,7 @@
 # For details: https://github.com/xiaosuyyds/PowerText/blob/master/NOTICE
 
 import os
+from functools import lru_cache
 from io import BytesIO
 from typing import Optional
 from pilmoji import source
@@ -25,6 +26,7 @@ class LocalEmojiSource(source.BaseSource):
         codepoints = "_".join(f"u{ord(c):04x}" for c in emoji)
         return f"emoji_{codepoints}.png"
 
+    @lru_cache(maxsize=256)
     def get_emoji(self, emoji: str, /) -> Optional[BytesIO]:
         """Retrieves an emoji image from the local directory."""
         filename = os.path.join(self.emoji_directory, self._emoji_to_filename(emoji))
@@ -35,6 +37,7 @@ class LocalEmojiSource(source.BaseSource):
         with open(filename, "rb") as f:
             return BytesIO(f.read())
 
+    @lru_cache(maxsize=256)
     def get_discord_emoji(self, id: int, /) -> Optional[BytesIO]:
         """Retrieves a Discord emoji image from the local directory."""
         filename = os.path.join(self.emoji_directory, f"discord_{id}.png")

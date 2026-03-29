@@ -63,7 +63,7 @@ def _extract_cmap_from_path(path: str, font: ImageFont.FreeTypeFont):
     try:
         with TTFont(path, lazy=True, fontNumber=font.index) as tt:
             return set(tt['cmap'].tables[0].ttFont.getBestCmap().keys())
-    except Exception:
+    except Exception as e:
         return set()
 
 
@@ -125,9 +125,9 @@ class Font:
                 self.font_uni_map.data = get_font_uni_map(self.font)
 
             if len(text) == 1:
-                return text in self.font_uni_map.data
+                return ord(text) in self.font_uni_map.data
             else:
-                return set(text).issubset(self.font_uni_map.data)
+                return set(map(ord, text)).issubset(self.font_uni_map.data)
         else:
             return all(self.check_has_char_func(char, self.font) for char in text)
 

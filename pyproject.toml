@@ -9,7 +9,7 @@ authors = [
 ]
 description = "A text renderer for Pillow that supports emojis, multiple fonts, automatic line wrapping, and automatic text truncation."
 readme = "README.md"
-version = "0.7.0"
+version = "0.7.1"
 requires-python = ">=3.10"
 license = "MPL-2.0"
 license-files = ["LICENSE"]

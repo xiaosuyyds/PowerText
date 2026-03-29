@@ -5,8 +5,7 @@ from PIL import Image, ImageFont, ImageDraw
 
 import src.power_text as power_text
 # import power_text as power_text
-from src.power_text import local_emoji_source
-# from power_text import local_emoji_source
+import emoji
 
 jap = re.compile(r'[\u3040-\u309F\u30A0-\u30FF]')
 
@@ -17,9 +16,10 @@ draw = ImageDraw.Draw(img)
 font1 = ImageFont.truetype(r'PINGFANG MEDIUM.TTF', 24)
 font2 = ImageFont.truetype(r'unifont-16.0.02.otf', 24)
 font3 = ImageFont.truetype(r'Segoe UI.ttf', 24)
+emoji_font = ImageFont.truetype(r'NotoColorEmoji.ttf', 109)
 
 
-draw.line(((900, 0), (900, 630)), fill=(0, 0, 0))
+draw.line(((910, 0), (910, 630)), fill=(0, 0, 0))
 draw.line(((0, 220), (1150, 220)), fill=(0, 0, 0))
 
 
@@ -38,15 +38,14 @@ res = power_text.draw_text(
 awa
     """.strip(),
     [
-        power_text.Font(font3, lambda char: char.lower() in "abcdefghijklmnopqrstuvwxyz0123456789"),
-        power_text.Font(font2, lambda char: jap.match(char) is not None, (22, 125, 255)),
-        power_text.Font(font1, lambda _: True, (220, 20, 60))
+        power_text.Font(font3, lambda char: char['text'].lower() in "abcdefghijklmnopqrstuvwxyz0123456789"),
+        power_text.Font(font2, lambda char: jap.match(char['text']) is not None, (22, 125, 255)),
+        power_text.Font(emoji_font, lambda char: emoji.is_emoji(char['text']), size=24),
+        power_text.Font(font1, lambda _: True, (220, 20, 60)),
     ],
     (0, 0, 0),  # 字体颜色
-    max_x=900,  # 最大宽度（超过自动换行）
+    max_x=910,  # 最大宽度（超过自动换行）
     max_y=220,  # 最大高度（超过自动省略）
-    has_emoji=True,
-    emoji_source=local_emoji_source.LocalEmojiSource(r"C:\Users\xiaosu\Downloads\noto-emoji-main\png\128"),
     end_text="...",  # 省略符号
 )
 print(f"生成用时: {round(((time.time() - start_time) * 1000), 2)}ms")

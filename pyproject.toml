@@ -5,28 +5,37 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "PowerText"
 authors = [
-  { name="校溯", email="xiaosu-1009@qq.com" }
+  { name="校溯", email="xiaosu@xiaosu.icu" }
 ]
-description = "PowerText is a text renderer for Pillow that supports emojis, multiple fonts, automatic line wrapping, and automatic text truncation."
+description = "A text renderer for Pillow that supports emojis, multiple fonts, automatic line wrapping, and automatic text truncation."
 readme = "README.md"
 version = "0.6.0"
 requires-python = ">=3.10"
-license = { file = "LICENSE" }
+license = "MPL-2.0"
+license-files = ["LICENSE"]
 keywords = ["text renderer", "emoji", "image-processing", "pillow"]
 classifiers = [
+    # Development Status
+    "Development Status :: 4 - Beta", # Beta is perfect for a 0.x.y release
+
+    # Supported Python Versions
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+
+    # Operating System
     "Operating System :: OS Independent",
+
+    # Intended Audience & Topic
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
-    "Pillow>=10.0",
+    "Pillow>=8.0",
     "fonttools>=4.25"
-]
-
-[project.optional-dependencies]
-full = [
-    "emoji~=1.6.3",
-    "pilmoji>=2.0"
 ]
 
 [project.urls]
@@ -37,4 +46,4 @@ package-dir = { "" = "src" }
 packages = ["power_text"]
 
 [tool.setuptools.package-data]
-PowerBlur = ["*.md"]
+power_text = ["*.md"]

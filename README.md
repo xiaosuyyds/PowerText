@@ -1,44 +1,40 @@
-# PowerText  
+# PowerText
 
 | English | [简体中文](https://github.com/xiaosuyyds/PowerText/blob/master/README_ZH.md) |
 
-## 📖 Introduction  
-PowerText is a text renderer for Pillow that supports emojis, multiple fonts, automatic line wrapping, and automatic truncation.  
+## 📖 Introduction
+PowerText is a text renderer for Pillow that supports emojis, multi-font matching, automatic word wrapping, and text truncation (auto-ellipsis).
 
-## ⬇️ Installation  
+## ⬇️ Installation
 ```bash
 python -m pip install PowerText
-```  
-Of course, you can also install it from the source:  
+```
+Alternatively, you can install from source:
 ```bash
 git clone https://github.com/xiaosuyyds/PowerText.git
 python -m pip install .
-```  
+```
 
-#### Note! By default, only the necessary dependencies are installed. If you need emoji rendering, please install:  
-```bash
-python -m pip install PowerText[full]
-```  
-or  
-```bash
-git clone https://github.com/xiaosuyyds/PowerText.git
-python -m pip install .[full]
-```  
-
-## 🧑‍💻 Usage  
-### Example Code  
+## 🧑‍💻 Usage
+### Example Code
 ```python
 import power_text
 import re
 from PIL import Image, ImageFont
+import emoji
 
+# Regex for Japanese Kana
 jap = re.compile(r'[\u3040-\u309F\u30A0-\u30FF]')
 
 img = Image.new("RGB", (1150, 630), (255, 255, 255))
-# Note: Ensure you have these font files or replace with paths to fonts you have
+# Note: Please ensure you have these font files or replace them with your local font paths
 font1 = ImageFont.truetype(r'PINGFANG MEDIUM.TTF', 24)
 font2 = ImageFont.truetype(r'unifont-16.0.02.otf', 24)
 font3 = ImageFont.truetype(r'Segoe UI.ttf', 24)
+# Note: For fonts like Noto Color Emoji, pay attention to the font size (e.g., 109), 
+# otherwise they may fail to load correctly.
+font_emoji = ImageFont.truetype("NotoColorEmoji.ttf", 109)
+
 
 power_text.draw_text(
     img,
@@ -54,44 +50,33 @@ power_text.draw_text(
 awa
     """.strip(),
     [
-        # Match Latin characters and numbers, use font3 (Segoe UI), color default
-        power_text.Font(font3, lambda char: char.lower() in "abcdefghijklmnopqrstuvwxyz0123456789"),
-        # Match Japanese Hiragana/Katakana, use font2 (unifont), color blue
-        power_text.Font(font2, lambda char: jap.match(char) is not None, (22, 125, 255)),
-        # Fallback for other characters (like CJK), use font1 (PingFang), color red
+        # Match Latin characters and numbers using font3 (Segoe UI), default color
+        power_text.Font(font3, lambda data: data['text'].lower() in "abcdefghijklmnopqrstuvwxyz0123456789"),
+        # Match Japanese Kana using font2 (unifont), colored blue
+        power_text.Font(font2, lambda data: jap.match(data['text']) is not None, (22, 125, 255)),
+        # Match emojis using font_emoji (Noto Color Emoji), set 'size' for automatic scaling to match text
+        power_text.Font(font_emoji, lambda data: emoji.is_emoji(data['text']), size=24),
+        # Fallback for other characters (e.g., CJK ideographs) using font1 (PingFang), colored red
         power_text.Font(font1, lambda _: True, (220, 20, 60))
     ],
     (0, 0, 0),  # Default font color (black)
     max_x=886,  # Maximum width (auto line wrap if exceeded)
     max_y=200,  # Maximum height (auto truncation if exceeded)
-    has_emoji=True,  # Enable emoji support
     end_text="..."  # Truncation symbol
 )
 img.show()
 ```
 
-### Tips:  
-By default, the emoji source is online (`Twemoji`), which may be slow to access in some regions. You can use a local source instead:
-```python
-import power_text
-from power_text import local_emoji_source
-power_text.draw_text(
-    ...,
-    emoji_source=local_emoji_source.LocalEmojiSource(r"path/to/your/noto-emoji-main/png/128") # Replace with your actual path
-)
-```
-To set the `emoji_source`, provide the path to the local folder containing emoji images (e.g., PNGs). You can obtain emoji images from Google's [Noto Emoji project](https://github.com/googlefonts/noto-emoji/tree/main/png). Download the `png` folder for a specific resolution (like `128`) to your local machine and point `LocalEmojiSource` to that directory.
-
-The output of the above code looks like this([Draw code](example.py)):  
+The output of the above code is as follows ([Source Code](example.py)):
 
 ![image](https://cdn.jsdelivr.net/gh/xiaosuyyds/PowerText@master/example.png)
 
-## Use Cases
+## Showcases
 
- - [murainbot-plugin-codeshare](https://github.com/xiaosuyyds/murainbot-plugin-codeshare/) Uses PowerText for multi-color code rendering.
+ - [murainbot-plugin-codeshare](https://github.com/xiaosuyyds/murainbot-plugin-codeshare/): Uses PowerText for multi-color code rendering.
 
 ## License
 
-Copyright 2025 Xiaosu.
+Copyright 2025-2026 Xiaosu.
 
-Distributed under the terms of the [Apache 2.0 license](https://github.com/xiaosuyyds/PowerText/blob/master/LICENSE).
+Distributed under the terms of the [MPL 2.0 License](https://github.com/xiaosuyyds/PowerText/blob/master/LICENSE).
